@@ -1,3 +1,4 @@
+verbose = False
 
 import random
 random.seed()
@@ -6,6 +7,7 @@ halfslot = 4
 subjects = ['a','b','c','d','free']
 maxSubWeek = 4
 daysInWeek = 4
+
 def newEmptyDay():
     day = [None for x in range(slots)]
     slot = random.randint(0,slots-1)
@@ -19,7 +21,7 @@ def newHalfDay():
     day = [None for x in range(slots)]
     for x in list(range(halfslot,slots)):
         day[x] = 'free'
-    slot = random.randint(0,halfslot)
+    slot = random.randint(0,halfslot-1)
     if slot == 3:
             return newHalfDay()
     day[slot] = 'prac'
@@ -62,10 +64,14 @@ def getAssignableSub(day):
         return getAssignableSub(day)
 
 
-def assignSlot(day,sub):
-    slot = random.randint(0,slots-1)
+def assignSlot(day,sub,halfDay):
+    slot = 0
+    if halfDay:
+        slot = random.randint(0,halfslot-1)
+    else:
+        slot = random.randint(0,slots-1)
     if day[slot]:
-        return assignSlot(day,sub)
+        return assignSlot(day,sub,halfDay)
     else:
         day[slot] = sub
         return day
@@ -79,7 +85,7 @@ def newDay(halfDay = False):
         day = newEmptyDay()
         lecs = slots-2
     for x in range(lecs):
-        day = assignSlot(day,getAssignableSub(day))
+        day = assignSlot(day,getAssignableSub(day),halfDay)
     return day
 
 def isDayValid(week,day):
@@ -93,6 +99,8 @@ def isDayValid(week,day):
     for weekday in tempWeek:
         for subject in weekday:
             subjectCount[subject] = subjectCount[subject] + 1
+    if verbose:
+        print(subjectCount) 
     for subject in subjectCount:
         if not subject == 'prac' and not subject == 'free':
             if subjectCount[subject] > maxSubWeek:
@@ -101,13 +109,27 @@ def isDayValid(week,day):
 
 def newTimeTable():
     week = []
+    loop = 1
     while len(week) < daysInWeek:
+        if verbose:
+            print("Current week: ")
+            print(week)
         if(len(week) == 1):
             day = newDay(True)
         else:
             day = newDay()
+        if verbose:
+            print("Generated Day: ")
+            print(day)
         if isDayValid(week,day):
             week.append(day)
+        loop = loop + 1
+        if loop > 100: #you have missed some rule (edge case) here because of which is goes in forever loop. This is to restart the process if that happens
+            if verbose:
+                print("Restarting because of infinite loop")
+            return newTimeTable()
     return week
 
-print(newTimeTable())
+timetable = newTimeTable()
+print('Generated timetable is:')
+print(timetable)
